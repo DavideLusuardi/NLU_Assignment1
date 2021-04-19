@@ -92,7 +92,6 @@ def check_subtree(sentence, words):
     """
 
     subtrees = extract_subtree(sentence)
-    print(words)
 
     for st in subtrees.values():
         if len(st) != len(words):
@@ -146,7 +145,9 @@ def extract_nsubj_dobj_iobj(sentence):
     Returns
     -------
     dict
-        A dict of lists of tokens representing the span for subject, direct object and indirect object
+        A dictionary containing for each key (subject, direct object and indirect object) a list of spans.
+        If for example there are more subjects in the sentence, the entry "nsubj" will be a list containing 
+        all the subject spans.
     """
 
     doc = nlp(sentence)
@@ -154,17 +155,18 @@ def extract_nsubj_dobj_iobj(sentence):
     
     for token in doc:
         if token.dep == nsubj:
-            spans["nsubj"] = list(token.subtree)
+            spans["nsubj"].append(list(token.subtree))
         if token.dep == dobj:
-            spans["dobj"] = list(token.subtree)
-        if token.dep == iobj:
-            spans["iobj"] = list(token.subtree)
+            spans["dobj"].append(list(token.subtree))
+        if token.dep == iobj or token.dep_ == "dative": # depends on spaCy version
+            spans["iobj"].append(list(token.subtree))
 
     return spans
 
     
 
 if __name__ == "__main__":
+    # testing of the implemented functions
 
     def display(sentence):
         from spacy import displacy
@@ -172,9 +174,29 @@ if __name__ == "__main__":
         displacy.serve(doc, style="dep")
 
     example = 'I saw the man with a telescope.'
-    print(extract_path(example))
-    print(extract_subtree(example))
     print(check_subtree(example, "with a telescope".split()))
-    print(extract_nsubj_dobj_iobj(example))
 
     # display(example)
+
+    test_sentences = [
+        "I saw the man with a telescope.",
+        "Joe waited for the train.",
+        "Mary and Samantha arrived at the bus station early but waited until noon for the bus.",
+        "I looked for Mary and Samantha at the bus station, but they arrived at the station before noon and left on the bus before I arrived.",
+        "Because Mary and Samantha arrived at the bus station before noon, I did not see them at the station.",
+        "While he waited at the train station, Joe realized that the train was late.",
+        "After they left on the bus, Mary and Samantha realized that Joe was waiting at the train station.",
+        "Sue passed Ann the ball.",
+        "The teacher gave the class some homework.",
+        "I read her the letter."
+    ]
+
+    for sentence in test_sentences:
+        print("\n"+"-"*150)
+        print(sentence)
+        print("-"*150)
+
+        print("PATHS TO TOKENS: ", extract_path(sentence))
+        print("SUBTREES: ", extract_subtree(sentence))
+        print("HEAD: ", get_head(sentence))
+        print(extract_nsubj_dobj_iobj(sentence))
